@@ -36,8 +36,8 @@ add_falcon_filter('falcon_builder_elements', function ($elements) {
 // CHECKOUT FORM FIELD EXAMPLE
 // =============================================================================
 //
-// lazy_billing_fields  — add / remove / reorder billing form fields
-// lazy_shipping_fields — same for the shipping form
+// falcon_billing_fields  — add / remove / reorder billing form fields
+// falcon_shipping_fields — same for the shipping form
 //
 // Each field:
 //   name      (string, required) — input name
@@ -57,7 +57,7 @@ add_falcon_filter('falcon_builder_elements', function ($elements) {
 // =============================================================================
 
 // ── Add "Company Name" to billing (between Last name and Country) ─────────────
-add_falcon_filter('lazy_billing_fields', function ($fields) {
+add_falcon_filter('falcon_billing_fields', function ($fields) {
     $fields[] = [
         'name'     => 'billing_company',
         'type'     => 'text',
@@ -71,7 +71,7 @@ add_falcon_filter('lazy_billing_fields', function ($fields) {
 });
 
 // ── Human-readable label for order pages ─────────────────────────────────────
-add_falcon_filter('lazy_checkout_field_labels', function ($labels) {
+add_falcon_filter('falcon_checkout_field_labels', function ($labels) {
     $labels['billing_company'] = 'Company';
     return $labels;
 });
@@ -86,19 +86,19 @@ add_falcon_filter('lazy_checkout_field_labels', function ($labels) {
 //
 // HOW IT WORKS
 // ─────────────
-// 1. lazy_product_fields  — adds the select field to ALL product types at once.
-//    (Use lazy_simple_product_fields / lazy_variable_product_fields for type-specific fields.)
+// 1. falcon_product_fields  — adds the select field to ALL product types at once.
+//    (Use falcon_simple_product_fields / falcon_variable_product_fields for type-specific fields.)
 //
 // 2. falcon_cart_item_data  — fires when the item is added to cart.
 //    The numeric add-on is absorbed into the stored unit price so that
 //    cart subtotal, checkout total, tax, coupon base, and invoices are
 //    all automatically correct — no patching needed anywhere else.
 //
-// 3. lazy_custom_field_labels — provides human-readable labels used by
-//    lazy_render_item_custom_fields() on mini-cart, cart, checkout,
+// 3. falcon_custom_field_labels — provides human-readable labels used by
+//    falcon_render_item_custom_fields() on mini-cart, cart, checkout,
 //    order confirmation, and admin order detail pages.
 //
-// 4. lazy_admin_order_item_meta — renders the label line in the admin panel.
+// 4. falcon_admin_order_item_meta — renders the label line in the admin panel.
 //
 // RESULT ON EVERY PAGE
 // ─────────────────────
@@ -107,16 +107,16 @@ add_falcon_filter('lazy_checkout_field_labels', function ($labels) {
 //  Cart          → same
 //  Checkout      → same
 //  Confirmation  → same
-//  Invoice       → same (labels resolved via lazy_custom_field_labels)
+//  Invoice       → same (labels resolved via falcon_custom_field_labels)
 //  Admin order   → unit price $104  •  Protective Case: Slim Case
 //
 // =============================================================================
 
 
 // ── 1. Field ──────────────────────────────────────────────────────────────────
-// lazy_product_fields applies to BOTH simple and variable products in one hook.
+// falcon_product_fields applies to BOTH simple and variable products in one hook.
 
-add_falcon_filter('lazy_product_fields', function ($fields) {
+add_falcon_filter('falcon_product_fields', function ($fields) {
 
     ob_start(); ?>
 
@@ -124,26 +124,26 @@ add_falcon_filter('lazy_product_fields', function ($fields) {
         <label class="block text-sm font-semibold text-heading mb-1.5">
             Protective Case
         </label>
-        <select name="lazy_custom_case"
+        <select name="falcon_custom_case"
                 class="w-full border border-gray-300 rounded-sm px-3 py-2 text-sm outline-none bg-white"
-                onchange="lazyCaseChanged(this)">
+                onchange="falconCaseChanged(this)">
             <option value="" data-price="0">No case — free</option>
             <option value="Slim Case"   data-price="5">Slim Case — +$5.00</option>
             <option value="Rugged Case" data-price="12">Rugged Case — +$12.00</option>
         </select>
-        <input type="hidden" name="lazy_custom_case_addon" id="lazy-case-price-input" value="0">
-        <p id="lazy-case-note" style="display:none"
+        <input type="hidden" name="falcon_custom_case_addon" id="falcon-case-price-input" value="0">
+        <p id="falcon-case-note" style="display:none"
            class="mt-1.5 text-sm font-semibold text-primary">
-            + <span id="lazy-case-amount"></span> will be added to the price.
+            + <span id="falcon-case-amount"></span> will be added to the price.
         </p>
     </div>
     <script>
-    function lazyCaseChanged(sel) {
+    function falconCaseChanged(sel) {
         var price = parseFloat(sel.options[sel.selectedIndex].dataset.price) || 0;
-        document.getElementById('lazy-case-price-input').value = price;
-        var note = document.getElementById('lazy-case-note');
+        document.getElementById('falcon-case-price-input').value = price;
+        var note = document.getElementById('falcon-case-note');
         note.style.display = price > 0 ? '' : 'none';
-        document.getElementById('lazy-case-amount').textContent = '$' + price.toFixed(2);
+        document.getElementById('falcon-case-amount').textContent = '$' + price.toFixed(2);
     }
     </script>
 
@@ -185,7 +185,7 @@ add_falcon_filter('falcon_cart_item_data', function ($item) {
 // ── 3. Human-readable label ───────────────────────────────────────────────────
 // Used by mini-cart, cart, checkout, confirmation, and invoice.
 
-add_falcon_filter('lazy_custom_field_labels', function ($labels) {
+add_falcon_filter('falcon_custom_field_labels', function ($labels) {
     $labels['case'] = 'Protective Case';
     return $labels;
 });
@@ -193,9 +193,9 @@ add_falcon_filter('lazy_custom_field_labels', function ($labels) {
 
 // ── 4. Admin order detail ─────────────────────────────────────────────────────
 
-add_falcon_action('lazy_admin_order_item_meta', function ($item) {
+add_falcon_action('falcon_admin_order_item_meta', function ($item) {
 
-    $labels = apply_falcon_filters('lazy_custom_field_labels', []);
+    $labels = apply_falcon_filters('falcon_custom_field_labels', []);
 
     foreach ($item->meta['custom_fields'] ?? [] as $key => $value) {
         if (!$value) continue;

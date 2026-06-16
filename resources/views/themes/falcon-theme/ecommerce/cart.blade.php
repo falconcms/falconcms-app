@@ -51,10 +51,10 @@
                                 <th class="p-4 border border-gray-100">Subtotal</th>
                             </tr>
                         </thead>
-                        <?php do_falcon_action('lazy_before_cart_items', $cart); ?>
+                        <?php do_falcon_action('falcon_before_cart_items', $cart); ?>
                         <tbody id="cart-items-body" class="text-[15px] text-gray-600">
                             @foreach($cart as $key => $item)
-                                <?php do_falcon_action('lazy_before_cart_item', $item, $key); ?>
+                                <?php do_falcon_action('falcon_before_cart_item', $item, $key); ?>
                                 <tr class="border-b border-gray-100 cart-item-row" data-key="{{ $key }}">
                                     <td class="p-4 border border-gray-100 text-center w-10">
                                         <button type="button" onclick="removeCartItem('{{ $key }}', this)" class="text-gray-400 hover:text-red-500 text-xl leading-none">&times;</button>
@@ -68,7 +68,7 @@
                                         {!! apply_falcon_filters('falcon_cart_item_name',
                                             '<a href="' . get_falcon_permalink($item) . '">' . e($item['name']) . '</a>',
                                             $item, $key) !!}
-                                        {!! lazy_render_item_custom_fields($item, 'cart') !!}
+                                        {!! falcon_render_item_custom_fields($item, 'cart') !!}
                                         <?php do_falcon_action('falcon_cart_item_meta', $item, $key); ?>
                                     </td>
                                     <td class="p-4 border border-gray-100">
@@ -85,7 +85,7 @@
                                         {{ falcon_price_format(($item['sale_price'] ?: $item['price']) * $item['quantity']) }}
                                     </td>
                                 </tr>
-                                <?php do_falcon_action('lazy_after_cart_item', $item, $key); ?>
+                                <?php do_falcon_action('falcon_after_cart_item', $item, $key); ?>
                             @endforeach
                             <tr>
                                 <td colspan="6" class="p-4 border border-gray-100">
@@ -121,7 +121,7 @@
                                 <th class="p-4 bg-gray-50 text-left font-bold text-gray-700">Shipping</th>
                                 <td class="p-4 text-sm" id="cart-shipping-cell">
                                     <div id="cart-shipping">
-                                        @php $shipDetails = get_falcon_cart_shipping_details(session()->get('lazy_shipping_country')); @endphp
+                                        @php $shipDetails = get_falcon_cart_shipping_details(session()->get('falcon_shipping_country')); @endphp
                                         @if($shipDetails['cost'] > 0)
                                             {{ $shipDetails['label'] }}: <span class="font-bold text-heading">{{ falcon_price_format($shipDetails['cost']) }}</span>
                                         @else
@@ -139,7 +139,7 @@
                                             <select id="shipping_country" class="w-full border border-gray-300 px-3 py-2 text-sm outline-none focus:border-primary">
                                                 <option value="">Select a country...</option>
                                                 @foreach(\FalconCms\Core\Services\EcommerceData::getCountries() as $code => $name)
-                                                    <option value="{{ $code }}" {{ session()->get('lazy_shipping_country') === $code ? 'selected' : '' }}>{{ $name }}</option>
+                                                    <option value="{{ $code }}" {{ session()->get('falcon_shipping_country') === $code ? 'selected' : '' }}>{{ $name }}</option>
                                                 @endforeach
                                             </select>
                                             <button type="button" onclick="updateShipping()" class="w-full bg-gray-100 text-gray-700 py-2 text-[12px] font-bold hover:bg-gray-200 transition-all uppercase tracking-wider">Update totals</button>

@@ -89,7 +89,7 @@
             <!-- Actions -->
             <div class="flex items-center gap-5">
                 <!-- Language Switcher -->
-                {!! lazy_lang_dropdown() !!}
+                {!! falcon_lang_dropdown() !!}
 
                 <!-- Cart Icon -->
                 <a href="{{ route('shop.cart') }}" class="relative group hover:text-primary transition-colors" style="color: inherit;">
@@ -115,7 +115,7 @@
     @foreach($menuItems as $item)
         @php $__hasMM = !empty($item->mega_menu_id) && isset($__megaMenuLayouts[$item->mega_menu_id]); @endphp
         @if($__hasMM)
-            <div class="lazy-mega-panel absolute left-0 right-0 z-50 shadow-xl transition-opacity duration-200"
+            <div class="falcon-mega-panel absolute left-0 right-0 z-50 shadow-xl transition-opacity duration-200"
                  data-mega-panel="{{ $item->id }}"
                  style="top:100%;pointer-events:none;opacity:0;visibility:hidden;background:{{ get_cms_option('theme_dropdown_bg', '#ffffff') }};border-top:1px solid var(--border-color);border-bottom:1px solid var(--border-color);">
                 <div class="container-custom py-6">
@@ -131,7 +131,7 @@
         var triggers = document.querySelectorAll('[data-mega-trigger]');
         if (!triggers.length) return;
 
-        var allPanels = document.querySelectorAll('.lazy-mega-panel');
+        var allPanels = document.querySelectorAll('.falcon-mega-panel');
         var hideTimer = null;
 
         function showPanel(panel) {

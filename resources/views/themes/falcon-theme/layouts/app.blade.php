@@ -339,7 +339,7 @@
     </style>
     
     @yield('styles')
-    {!! do_falcon_action('lazy_head') !!}
+    {!! do_falcon_action('falcon_head') !!}
 
     {{-- PRIORITY HEAD SCRIPT --}}
     @if(get_cms_option('theme_head_script'))

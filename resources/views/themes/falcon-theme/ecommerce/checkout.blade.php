@@ -49,7 +49,7 @@
                     <div class="space-y-1.5 mb-4">
                         <label class="text-[14px] font-bold text-heading">Country / Region <span class="text-red-600">*</span></label>
                         <select name="billing_country" class="w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] bg-white focus:border-primary outline-none cursor-pointer">
-                            @php $selectedCountry = old('billing_country', session('lazy_shipping_country')); @endphp
+                            @php $selectedCountry = old('billing_country', session('falcon_shipping_country')); @endphp
                             @foreach(\FalconCms\Core\Services\EcommerceData::getCountriesWithStates() as $code => $name)
                                 <option value="{{ $code }}" {{ $selectedCountry == $code ? 'selected' : '' }}>{{ $name }}</option>
                             @endforeach
@@ -113,7 +113,7 @@
                         <div class="space-y-1.5">
                             <label class="text-[14px] font-bold text-heading">Country / Region <span class="text-red-600">*</span></label>
                             <select name="shipping_country" class="w-full border border-[#ddd] rounded-sm px-3 py-2 text-[14px] bg-white focus:border-primary outline-none">
-                                @php $selectedShipCountry = old('shipping_country', session('lazy_shipping_country')); @endphp
+                                @php $selectedShipCountry = old('shipping_country', session('falcon_shipping_country')); @endphp
                                 @foreach(\FalconCms\Core\Services\EcommerceData::getCountriesWithStates() as $code => $name)
                                     <option value="{{ $code }}" {{ $selectedShipCountry == $code ? 'selected' : '' }}>{{ $name }}</option>
                                 @endforeach
@@ -179,7 +179,7 @@
                             <tr class="border-b border-[#eee]">
                                 <th class="text-left p-4 font-bold text-heading">Shipping</th>
                                 <td class="text-right p-4 text-body" id="checkout-shipping">
-                                    @php $shipDetails = get_falcon_cart_shipping_details(session('lazy_shipping_country')); @endphp
+                                    @php $shipDetails = get_falcon_cart_shipping_details(session('falcon_shipping_country')); @endphp
                                     {{ $shipDetails['label'] }}: <span class="font-bold text-heading">{{ $shipDetails['cost'] > 0 ? falcon_price_format($shipDetails['cost']) : 'Free' }}</span>
                                 </td>
                             </tr>
@@ -222,7 +222,7 @@
                     </table>
 
                     <!-- Payment Section -->
-                    @php $gateways = lazy_enabled_payment_gateways(); $firstGw = array_key_first($gateways); @endphp
+                    @php $gateways = falcon_enabled_payment_gateways(); $firstGw = array_key_first($gateways); @endphp
                     <div class="p-8 border-t border-[#eee]">
                         <div class="max-w-4xl">
                             @if(empty($gateways))

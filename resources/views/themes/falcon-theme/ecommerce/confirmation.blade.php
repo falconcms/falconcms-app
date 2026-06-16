@@ -38,7 +38,7 @@
                         <span class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Payment
                             Method</span>
                         @php
-                            $orderGateways = lazy_enabled_payment_gateways();
+                            $orderGateways = falcon_enabled_payment_gateways();
                             $pmLabel =
                                 $orderGateways[$order->payment_method]['title'] ??
                                 ucwords(str_replace('_', ' ', $order->payment_method ?: 'N/A'));
