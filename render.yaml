@@ -1,0 +1,66 @@
+services:
+  - type: web
+    name: falconcms-demo
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    region: singapore
+    plan: free
+    healthCheckPath: /
+    envVars:
+      - key: APP_NAME
+        value: FalconCMS Demo
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_URL
+        value: https://falconcms-demo.onrender.com  # update after first deploy
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        fromDatabase:
+          name: falconcms-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: falconcms-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: falconcms-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: falconcms-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: falconcms-db
+          property: password
+      - key: SESSION_DRIVER
+        value: database
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: CACHE_STORE
+        value: database
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: FILESYSTEM_DISK
+        value: public
+      # First deploy only — set to false after install completes
+      - key: FALCON_FIRST_INSTALL
+        value: "true"
+      # Admin credentials for first install
+      - key: FALCON_ADMIN_EMAIL
+        value: admin@falconcms.demo
+      - key: FALCON_ADMIN_PASSWORD
+        generateValue: true  # auto-generated — check Render logs after first deploy
+
+databases:
+  - name: falconcms-db
+    databaseName: falconcms
+    user: falconcms
+    plan: free
+    region: singapore

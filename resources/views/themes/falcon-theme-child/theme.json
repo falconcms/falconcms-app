@@ -1,0 +1,6 @@
+{
+    "name": "Falcon Theme Child",
+    "parent": "falcon-theme",
+    "version": "1.0.0",
+    "description": "Child theme of Falcon Theme. Customize freely — this directory is never overwritten by CMS updates."
+}
