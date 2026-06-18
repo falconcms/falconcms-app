@@ -5,6 +5,11 @@ echo "=============================="
 echo "  FalconCMS — Starting Up"
 echo "=============================="
 
+# Railway injects $PORT — update nginx to listen on it (default 80)
+NGINX_PORT="${PORT:-80}"
+sed -i "s/listen 80;/listen $NGINX_PORT;/g" /etc/nginx/sites-enabled/default
+echo "==> Nginx listening on port $NGINX_PORT"
+
 if [ -z "$APP_KEY" ]; then
     echo "ERROR: APP_KEY is not set. Add it in Render environment variables."
     exit 1
