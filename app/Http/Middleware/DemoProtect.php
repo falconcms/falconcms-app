@@ -19,7 +19,10 @@ class DemoProtect
         $isUserUpdate = $request->is('admin/users/*')
             && in_array($request->method(), ['PUT', 'PATCH']);
 
-        if ($isUserCreate || $isUserUpdate) {
+        $isPasswordUpdate = $request->is('account-password-update')
+            && $request->isMethod('post');
+
+        if ($isUserCreate || $isUserUpdate || $isPasswordUpdate) {
             $msg = config('demo.message');
             if ($request->expectsJson()) {
                 return response()->json(['error' => $msg], 403);

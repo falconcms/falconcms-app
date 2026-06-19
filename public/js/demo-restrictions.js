@@ -131,4 +131,13 @@
             if (desc) desc.textContent = '-1 = Unlimited concurrent sessions (demo site default).';
         }
     }
+
+    // ── My Account — password tab (frontend) ─────────────────────────────
+    // Target by form action since the URL slug is dynamic
+    document.querySelectorAll('form[action*="account-password-update"]').forEach(function (form) {
+        form.querySelectorAll('input').forEach(function (el) { disableInput(el, MSG); });
+        form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(function (btn) {
+            disableButton(btn, MSG);
+        });
+    });
 })();

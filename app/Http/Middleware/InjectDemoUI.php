@@ -15,7 +15,10 @@ class InjectDemoUI
             return $response;
         }
 
-        if (!$request->is('admin*')) {
+        // Inject on admin pages AND frontend account page
+        $isAdmin   = $request->is('admin*');
+        $isAccount = $request->is('*account*') || $request->is('*my-account*');
+        if (!$isAdmin && !$isAccount) {
             return $response;
         }
 
@@ -25,7 +28,7 @@ class InjectDemoUI
 
         $content = $response->getContent();
         if (str_contains($content, '</body>')) {
-            $script = '<script src="/js/demo-restrictions.js?v=3"></script>';
+            $script = '<script src="/js/demo-restrictions.js?v=4"></script>';
             $response->setContent(str_replace('</body>', $script . '</body>', $content));
         }
 
