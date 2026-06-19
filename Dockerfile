@@ -38,6 +38,9 @@ RUN mkdir -p storage/framework/views storage/framework/cache storage/framework/s
 # Install PHP deps — triggers vendor:publish for falcon themes + assets
 RUN COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader --no-interaction
 
+# Apply post-install patches (e.g. PHP_BINARY fix for php-fpm context)
+RUN php docker/patch.php
+
 # Publish vendor assets into public/vendor/
 RUN php artisan vendor:publish --all --force
 
@@ -47,10 +50,10 @@ RUN npm install && npm run build
 # Remove build .env — real values come from Render env vars at runtime
 RUN rm .env
 
-# Permissions
-RUN chown -R www-data:www-data storage bootstrap/cache \
+# Permissions — chown entire app so www-data can write composer.lock, public/vendor, etc.
+RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 775 storage bootstrap/cache \
-    && git config --global --add safe.directory /var/www/html \
+    && git config --system --add safe.directory /var/www/html \
     && mkdir -p /var/www/.composer/cache \
     && chown -R www-data:www-data /var/www/.composer
 
