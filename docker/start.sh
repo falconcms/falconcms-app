@@ -71,6 +71,10 @@ if [ "${FALCON_FIRST_INSTALL:-false}" = "true" ]; then
         echo 'Options set.';
     " --no-interaction
 
+    echo "==> Seeding default content and menus..."
+    php artisan db:seed --class="FalconCms\\Core\\Database\\Seeders\\DefaultContentSeeder" --force
+    php artisan db:seed --class="FalconCms\\Core\\Database\\Seeders\\MenuSeeder" --force
+
     echo "==> First install complete!"
     echo "    Admin: ${ADMIN_EMAIL} / ${ADMIN_PASS}"
     echo "    Set FALCON_FIRST_INSTALL=false in Render for future deploys."
