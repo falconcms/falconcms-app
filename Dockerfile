@@ -4,9 +4,10 @@ FROM php:8.3-fpm
 RUN apt-get update && apt-get install -y \
     git curl zip unzip nginx supervisor \
     libpng-dev libjpeg-dev libfreetype6-dev \
-    libzip-dev libxml2-dev libonig-dev libpq-dev \
+    libzip-dev libxml2-dev libonig-dev libpq-dev libicu-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring gd zip exif pcntl bcmath xml intl opcache \
+    && docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring gd zip exif pcntl bcmath xml intl \
+    && docker-php-ext-enable opcache \
     && rm -rf /var/lib/apt/lists/*
 
 # Composer
