@@ -49,7 +49,10 @@ RUN rm .env
 
 # Permissions
 RUN chown -R www-data:www-data storage bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache
+    && chmod -R 775 storage bootstrap/cache \
+    && git config --global --add safe.directory /var/www/html \
+    && mkdir -p /var/www/.composer/cache \
+    && chown -R www-data:www-data /var/www/.composer
 
 # Configs
 COPY docker/nginx.conf /etc/nginx/sites-enabled/default
