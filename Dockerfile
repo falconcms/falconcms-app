@@ -39,7 +39,7 @@ RUN mkdir -p storage/framework/views storage/framework/cache storage/framework/s
 RUN COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader --no-interaction
 
 # Build frontend assets
-RUN npm ci && npm run build
+RUN npm install && npm run build
 
 # Remove build .env — real values come from Render env vars at runtime
 RUN rm .env
