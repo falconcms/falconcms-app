@@ -1,0 +1,38 @@
+services:
+  app:
+    build: .
+    container_name: falconcms_app
+    restart: always
+    ports:
+      - "80:80"
+    env_file:
+      - .env.production
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - storage_app:/var/www/html/storage/app
+      - storage_public:/var/www/html/public/storage
+
+  mysql:
+    image: mysql:8.0
+    container_name: falconcms_mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+volumes:
+  mysql_data:
+  storage_app:
+  storage_public:
