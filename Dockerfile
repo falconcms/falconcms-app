@@ -38,6 +38,9 @@ RUN mkdir -p storage/framework/views storage/framework/cache storage/framework/s
 # Install PHP deps — triggers vendor:publish for falcon themes + assets
 RUN COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader --no-interaction
 
+# Publish vendor assets into public/vendor/
+RUN php artisan vendor:publish --all --force
+
 # Build frontend assets
 RUN npm install && npm run build
 
