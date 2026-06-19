@@ -15,7 +15,7 @@ class InjectDemoUI
             return $response;
         }
 
-        if (!$request->is('falcon-admin*')) {
+        if (!$request->is('admin*')) {
             return $response;
         }
 
@@ -25,7 +25,7 @@ class InjectDemoUI
 
         $content = $response->getContent();
         if (str_contains($content, '</body>')) {
-            $script = '<script src="/js/demo-restrictions.js?v=2"></script>';
+            $script = '<script src="/js/demo-restrictions.js?v=3"></script>';
             $response->setContent(str_replace('</body>', $script . '</body>', $content));
         }
 

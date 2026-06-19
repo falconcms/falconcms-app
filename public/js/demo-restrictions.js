@@ -69,15 +69,15 @@
         bindTooltip(a, message || MSG);
     }
 
-    // ── Users index (/falcon-admin/users) ────────────────────────────────────
-    if (/\/falcon-admin\/users\/?$/.test(path)) {
+    // ── Users index (/admin/users) ────────────────────────────────────
+    if (/\/admin\/users\/?$/.test(path)) {
         document.querySelectorAll('a[href*="users/create"]').forEach(function (a) {
             disableLink(a, MSG);
         });
     }
 
-    // ── Users edit (/falcon-admin/users/{id}/edit) ───────────────────────────
-    if (/\/falcon-admin\/users\/\d+\/edit/.test(path)) {
+    // ── Users edit (/admin/users/{id}/edit) ───────────────────────────
+    if (/\/admin\/users\/\d+\/edit/.test(path)) {
         // Disable submit button
         disableButton(document.querySelector('button[type="submit"]'), MSG);
 
@@ -96,16 +96,16 @@
         });
     }
 
-    // ── Users create (/falcon-admin/users/create) ─────────────────────────────
-    if (/\/falcon-admin\/users\/create/.test(path)) {
+    // ── Users create (/admin/users/create) ─────────────────────────────
+    if (/\/admin\/users\/create/.test(path)) {
         disableButton(document.querySelector('button[type="submit"]'), MSG);
         document.querySelectorAll('input, select, textarea').forEach(function (el) {
             disableInput(el, MSG);
         });
     }
 
-    // ── Settings page (/falcon-admin/settings) ───────────────────────────────
-    if (/\/falcon-admin\/settings/.test(path)) {
+    // ── Settings page (/admin/settings) ───────────────────────────────
+    if (/\/admin\/settings/.test(path)) {
         const mdCheckbox = document.getElementById('allow_multi_device');
         const maxDevices = document.getElementById('max_devices');
 

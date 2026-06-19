@@ -13,10 +13,10 @@ class DemoProtect
             return $next($request);
         }
 
-        $isUserCreate = $request->is('falcon-admin/users')
+        $isUserCreate = $request->is('admin/users')
             && $request->isMethod('post');
 
-        $isUserUpdate = $request->is('falcon-admin/users/*')
+        $isUserUpdate = $request->is('admin/users/*')
             && in_array($request->method(), ['PUT', 'PATCH']);
 
         if ($isUserCreate || $isUserUpdate) {
