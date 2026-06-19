@@ -40,6 +40,16 @@ php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
+# Demo site: force multi-device login settings so many users can try the demo
+if [ "${DEMO_MODE:-false}" = "true" ]; then
+    echo "==> Demo mode: enforcing multi-device login settings..."
+    php artisan tinker --execute="
+        \Illuminate\Support\Facades\DB::table('cms_settings')->updateOrInsert(['key'=>'allow_multi_device'], ['value'=>'1']);
+        \Illuminate\Support\Facades\DB::table('cms_settings')->updateOrInsert(['key'=>'max_devices'], ['value'=>'9999']);
+        echo 'Multi-device settings applied.';
+    " --no-interaction 2>/dev/null || true
+fi
+
 # First install: seed roles/permissions, create admin user, create shop pages
 if [ "${FALCON_FIRST_INSTALL:-false}" = "true" ]; then
     echo "==> First-time install: seeding system data..."
