@@ -30,8 +30,13 @@ RUN echo "APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" > .env \
     && echo "DB_DATABASE=/tmp/build.sqlite" >> .env \
     && touch /tmp/build.sqlite
 
+# Create required storage directories before composer install (artisan package:discover needs them)
+RUN mkdir -p storage/framework/views storage/framework/cache storage/framework/sessions \
+             storage/logs bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
+
 # Install PHP deps — triggers vendor:publish for falcon themes + assets
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+RUN COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader --no-interaction
 
 # Build frontend assets
 RUN npm ci && npm run build
