@@ -265,9 +265,16 @@
                     style="flex-shrink:0;margin-left:auto;display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 20px;border:0;border-radius:4px;background:#8b5cf6;color:#fff;font-weight:600;font-size:14px;cursor:pointer">
                 <span class="material-symbols-outlined" style="font-size:20px">smart_display</span> Preview
             </button>
-            <button @click="save()" :disabled="saving || !dirty" title="Save (Ctrl+S)"
-                    :style="`flex-shrink:0;display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 22px;border:0;border-radius:4px;background:var(--accent);color:#fff;font-weight:600;font-size:14px;opacity:${(saving||!dirty)?0.55:1};cursor:${(saving||!dirty)?'default':'pointer'}`">
-                <span class="material-symbols-outlined" style="font-size:20px">save</span><span x-text="saving?'Saving…':'Save'"></span>
+            {{-- Save. Free to design; saving needs Pro. When the site isn't Pro the button
+                 is shown locked (greyed) — hovering explains it and clicking opens the
+                 upgrade prompt, instead of saving. --}}
+            <button @click="canSave ? save() : proSaveAlert()"
+                    :disabled="canSave && (saving || !dirty)"
+                    :title="canSave ? 'Save (Ctrl+S)' : 'Saving requires a premium subscription'"
+                    :style="canSave
+                        ? `flex-shrink:0;display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 22px;border:0;border-radius:4px;background:var(--accent);color:#fff;font-weight:600;font-size:14px;opacity:${(saving||!dirty)?0.55:1};cursor:${(saving||!dirty)?'default':'pointer'}`
+                        : 'flex-shrink:0;display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 22px;border:0;border-radius:4px;background:#3a3a44;color:#9aa;font-weight:600;font-size:14px;opacity:.75;cursor:not-allowed'">
+                <span class="material-symbols-outlined" style="font-size:20px" x-text="canSave ? 'save' : 'lock'"></span><span x-text="canSave ? (saving?'Saving…':'Save') : 'Save (Pro)'"></span>
             </button>
         </div>
 
@@ -1668,6 +1675,7 @@
                 history:[], redoStack:[], _baseline:null, _restoring:false, _ready:false, _histTimer:null, _keysBound:false, _histBound:false,
                 dirty:false, _savedState:null, device:'desktop', guides:[], _dragLayer:null, slideModal:false, templateModal:false, newSlideName:'', shapePicker:false, buttonPicker:false,
                 livePreview:false, revModal:false, revList:[], revLoading:false,
+                canSave: @json($canSave ?? true), upgradeUrl: @json($upgradeUrl ?? 'https://falconcms.com/#pricing'),
                 shapeTypes:['square','circle','triangle','triangle-down','diamond','pentagon','hexagon','star','parallelogram','chevron'],
                 buttonPresets:[
                     { name:'Solid',    style:{bg:'#2271b1',color:'#fff',size:16,radius:6,weight:600} },
@@ -1772,7 +1780,7 @@
                 // Keyboard: arrow keys nudge the selected layer (Shift = 10px), Delete/Backspace removes it.
                 onKey(e){
                     // Ctrl/Cmd+S saves (works even while typing in a field).
-                    if((e.ctrlKey||e.metaKey) && (e.key||'').toLowerCase()==='s'){ e.preventDefault(); if(this.dirty && !this.saving) this.save(); return; }
+                    if((e.ctrlKey||e.metaKey) && (e.key||'').toLowerCase()==='s'){ e.preventDefault(); if(!this.canSave){ this.proSaveAlert(); return; } if(this.dirty && !this.saving) this.save(); return; }
                     const t=e.target;
                     if(t && (t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT'||t.isContentEditable)) return;
                     // Undo / Redo — work regardless of layer selection.
@@ -2028,7 +2036,7 @@
                 createSlideFromModal(){ this.addSlide(this.newSlideName); this.slideModal=false; this.newSlideName=''; },
                 openTemplates(){ this.templateModal=true; },
                 openDemos(){ this.demoModal=true; },
-                openSaveTemplate(){ this.demoModal=false; this.saveTplName = this.name ? (this.name+' design') : 'My design'; this.saveTplCat='My designs'; this.saveTplModal=true; },
+                openSaveTemplate(){ if(!this.canSave){ this.proSaveAlert(); return; } this.demoModal=false; this.saveTplName = this.name ? (this.name+' design') : 'My design'; this.saveTplCat='My designs'; this.saveTplModal=true; },
                 // Save the current slider (settings + slides) as a reusable pre-built template.
                 async saveAsTemplate(){
                     const nm=(this.saveTplName||'').trim(); if(!nm){ return; }
@@ -2246,7 +2254,20 @@
                 pickLayerImage(){ this._media(u=>{ if(this.layer)this.layer.url=u; }); },
                 _media(cb){ if(typeof window.openMediaModal!=='function'){ if(window.showToast)window.showToast('Media picker not available.','error'); return; } window.openMediaModal((att)=>{ let u=att.full_url||att.url||att.path||att.guid||''; if(!u)return; if(u.indexOf('media/')===0)u='/storage/'+u; else if(u.indexOf('http')!==0&&u.indexOf('/')!==0)u='/'+u; cb(u); }); },
 
-                async save(){ this.saving=true; const sent=this.serialize(); try{ const r=await fetch(@json(route('admin.sliders.update',$slider)),{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name=csrf-token]')?.content||'{{ csrf_token() }}','X-HTTP-Method-Override':'PUT','Accept':'application/json'},body:JSON.stringify({name:this.name,settings:this.settings,slides:this.slides})}); if(r.ok){ this._savedState=sent; this.dirty=(this.serialize()!==sent); } if(window.showToast)window.showToast(r.ok?'Saved':'Save failed',r.ok?'success':'error'); }catch(e){ if(window.showToast)window.showToast('Save failed','error'); } finally{ this.saving=false; } },
+                // Premium gate: designing is free, saving needs Pro. Shows an upgrade prompt
+                // using the CMS's sweet-alert confirm (the same one used for deletes).
+                proSaveAlert(){
+                    if(window.falconConfirm){
+                        window.falconConfirm({
+                            title:'Saving needs Pro',
+                            message:'Designing sliders is free — but saving your slider needs an active FalconCMS Pro subscription.',
+                            confirmText:'Get Pro',
+                            cancelText:'Keep designing',
+                        }).then(ok=>{ if(ok) window.open(this.upgradeUrl,'_blank','noopener'); });
+                    } else if(window.showToast){ window.showToast('Saving requires a premium subscription','error'); }
+                    else { alert('Saving requires a premium subscription.'); }
+                },
+                async save(){ if(!this.canSave){ this.proSaveAlert(); return; } this.saving=true; const sent=this.serialize(); try{ const r=await fetch(@json(route('admin.sliders.update',$slider)),{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name=csrf-token]')?.content||'{{ csrf_token() }}','X-HTTP-Method-Override':'PUT','Accept':'application/json'},body:JSON.stringify({name:this.name,settings:this.settings,slides:this.slides})}); if(r.status===403){ this.canSave=false; this.proSaveAlert(); return; } if(r.ok){ this._savedState=sent; this.dirty=(this.serialize()!==sent); } if(window.showToast)window.showToast(r.ok?'Saved':'Save failed',r.ok?'success':'error'); }catch(e){ if(window.showToast)window.showToast('Save failed','error'); } finally{ this.saving=false; } },
             };
         }
     </script>

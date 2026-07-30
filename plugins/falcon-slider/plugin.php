@@ -9,18 +9,18 @@
 
 use FalconSlider\Models\Slider;
 
-// Admin sidebar entry — only shown to Pro sites with the capability.
-if (function_exists('falcon_pro') && falcon_pro()) {
-    falcon_add_menu_page([
-        'slug'       => 'falcon-slider',
-        'title'      => 'Falcon Slider',
-        'icon'       => 'view_carousel',
-        'route'      => 'admin.sliders.index',
-        'permission' => 'manage_sliders',
-        'position'   => 42.5,   // between Falcon Builder (42) and Plugins (43)
-        'group'      => 'Main',
-    ]);
-}
+// Admin sidebar entry. Shown whenever the plugin is active and the user has the
+// capability — sliders can be designed for free; only *saving* needs Pro (a freemium
+// "try it, subscribe to keep it" model, enforced in SliderController + the editor).
+falcon_add_menu_page([
+    'slug'       => 'falcon-slider',
+    'title'      => 'Falcon Slider',
+    'icon'       => 'view_carousel',
+    'route'      => 'admin.sliders.index',
+    'permission' => 'manage_sliders',
+    'position'   => 42.5,   // between Falcon Builder (42) and Plugins (43)
+    'group'      => 'Main',
+]);
 
 // Frontend shortcode: [falcon_slider id="1"] or [falcon_slider slug="hero"].
 add_falcon_shortcode('falcon_slider', function (array $atts) {

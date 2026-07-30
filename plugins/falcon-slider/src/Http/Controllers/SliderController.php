@@ -10,9 +10,9 @@ use Illuminate\Routing\Controller;
 class SliderController extends Controller
 {
     /**
-     * Gate the whole admin behind the capability AND a Pro license — the slider
-     * builder is a Pro feature (falcon_pro() also honours the freemium grace
-     * window, like every other paid feature).
+     * The whole admin needs the capability. The builder itself is free to use — you can
+     * design a slider fully — but *persisting* a design (Save / Save-as-template) needs
+     * Pro. Pro means an active license OR the freemium grace window (falcon_pro()).
      */
     public function __construct()
     {
@@ -20,11 +20,24 @@ class SliderController extends Controller
             if (! auth()->user() || ! auth()->user()->hasPermission('manage_sliders')) {
                 abort(403);
             }
-            if (! function_exists('falcon_pro') || ! falcon_pro()) {
-                abort(403, 'Falcon Slider is a Pro feature. Please activate your license.');
-            }
             return $next($request);
         });
+    }
+
+    /** True when this site may persist slider designs (licensed, or still in grace). */
+    protected function canSave(): bool
+    {
+        return ! function_exists('falcon_pro') || falcon_pro();
+    }
+
+    /** JSON/HTTP rejection used by the save endpoints when the site isn't Pro. */
+    protected function proRequired(Request $request)
+    {
+        $msg = 'Saving your slider requires an active FalconCMS Pro subscription.';
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => false, 'pro_required' => true, 'message' => $msg], 403);
+        }
+        return redirect()->back()->with('error', $msg);
     }
 
     public function index()
@@ -67,12 +80,20 @@ class SliderController extends Controller
             'icons'         => \FalconSlider\Support\IconLibrary::names(),
             'userTemplates' => \FalconSlider\Models\SliderTemplate::latest()->get(['id', 'name', 'category', 'settings', 'slides']),
             'isNew'         => (bool) session('sliderIsNew', false),
+            // Sliders design for free; saving needs Pro. Pass the state to the editor so it
+            // can disable Save and prompt for a subscription when the site isn't Pro.
+            'canSave'       => $this->canSave(),
+            'upgradeUrl'    => function_exists('falcon_upgrade_url') ? falcon_upgrade_url() : 'https://falconcms.com/#pricing',
         ]);
     }
 
     /** Save the current design as a reusable pre-built template (called from the editor via fetch). */
     public function saveTemplate(Request $request)
     {
+        if (! $this->canSave()) {
+            return $this->proRequired($request);
+        }
+
         $data = $request->validate([
             'name'     => ['required', 'string', 'max:120'],
             'category' => ['nullable', 'string', 'max:60'],
@@ -110,6 +131,10 @@ class SliderController extends Controller
     /** Save the whole slider (settings + slides JSON) from the editor. */
     public function update(Request $request, Slider $slider)
     {
+        if (! $this->canSave()) {
+            return $this->proRequired($request);
+        }
+
         // Snapshot the CURRENT (about-to-be-replaced) design first, so every save
         // leaves a restorable point. Skip the very first save of an empty slider.
         $this->snapshot($slider);
