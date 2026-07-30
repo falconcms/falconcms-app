@@ -1,0 +1,12 @@
+{
+    "name": "Falcon Slider",
+    "slug": "falcon-slider",
+    "version": "1.0.0",
+    "description": "Layer-based slider builder with per-layer timeline animation. A Pro feature.",
+    "author": "FalconCMS",
+    "requires_php": ">=8.1",
+    "requires_cms": ">=2.2",
+    "namespace": "FalconSlider\\",
+    "lifecycle": "FalconSlider\\Lifecycle",
+    "dependencies": []
+}
