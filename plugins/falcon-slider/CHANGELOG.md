@@ -2,6 +2,20 @@
 
 All notable changes to the Falcon Slider plugin are documented here.
 
+## v1.1.0 — 2026-07-31
+
+### Added
+- **Text & button borders** — width, style, colour and corner radius.
+- **Text background** — background colour + padding for text layers.
+- **Text stroke / outline** — `-webkit-text-stroke` width + colour (works with reveals).
+- **Full Google Fonts** — a searchable font picker with **all ~1,700 Google Fonts**, each
+  showing its own real weights; the full weight range (100–900) loads for every font.
+
+### Fixed
+- **Group-layer animations** now drive their members correctly (with stagger) on both the
+  editor canvas and the front-end — an editor default could previously suppress them.
+- **Font-family dropdown** no longer restyles its whole list to the selected font.
+
 ## v1.0.0 — 2026-07-30
 
 First public release.

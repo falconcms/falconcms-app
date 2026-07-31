@@ -78,6 +78,14 @@
         .fse-num input { width:52px; background:transparent; border:0; color:var(--ink); text-align:center; outline:none; font-size:12.5px; }
         .fse-input { background:#1c1c24; border:1px solid var(--line); border-radius:5px; color:var(--ink); height:32px; padding:0 9px; width:100%; outline:none; font-size:12.5px; }
         .fse-input:focus { border-color:var(--accent); }
+        /* Searchable font picker */
+        .fse-fontpop { position:absolute; z-index:2000; left:0; right:0; top:calc(100% + 4px); background:#1c1c24; border:1px solid var(--line); border-radius:6px; padding:8px; box-shadow:0 12px 34px rgba(0,0,0,.55); }
+        .fse-fontlist { max-height:260px; overflow-y:auto; }
+        .fse-fontopt { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:7px 9px; border-radius:4px; cursor:pointer; color:var(--ink); font-size:13px; }
+        .fse-fontopt:hover { background:#2a2f3a; }
+        .fse-fontopt.on { background:var(--accent); color:#fff; }
+        .fse-fontcat { font-size:10px; color:var(--mut); flex-shrink:0; }
+        .fse-fontopt.on .fse-fontcat { color:rgba(255,255,255,.7); }
         textarea.fse-input { height:auto; padding:7px 9px; }
         select.fse-input { height:32px; }
         /* Date/time inputs: dark UA styling so the calendar icon + popup are visible on the dark panel */
@@ -733,22 +741,34 @@
                                         <template x-if="layer.type==='text' || layer.type==='button'">
                                             <div>
                                                 {{-- Typography --}}
+                                                {{-- Searchable font picker — all Google Fonts, grouped by category --}}
                                                 <div class="fse-field">
                                                     <label class="fse-lbl">Font family</label>
-                                                    <select x-model="layer.style.family" @change="loadFont(layer.style.family)" class="fse-input" :style="`font-family:'${layer.style.family||'inherit'}'`">
-                                                        <option value="">Default (theme)</option>
-                                                        <template x-for="(list,grp) in fonts" :key="grp">
-                                                            <optgroup :label="grp">
-                                                                <template x-for="f in list" :key="f"><option :value="f" x-text="f"></option></template>
-                                                            </optgroup>
-                                                        </template>
-                                                    </select>
+                                                    <div x-data="{open:false, q:''}" @click.outside="open=false" style="position:relative">
+                                                        <button type="button" @click="open=!open; if(open)$nextTick(()=>$refs.fq&&$refs.fq.focus())" class="fse-input" style="display:flex;align-items:center;justify-content:space-between;text-align:left;cursor:pointer">
+                                                            <span x-text="layer.style.family||'Default (theme)'" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+                                                            <span class="material-symbols-outlined" style="font-size:18px;color:var(--mut)">expand_more</span>
+                                                        </button>
+                                                        <div x-show="open" x-cloak class="fse-fontpop">
+                                                            <input type="text" x-ref="fq" x-model="q" @click.stop placeholder="Search all fonts…" class="fse-input" style="margin-bottom:6px">
+                                                            <div class="fse-fontlist">
+                                                                <div class="fse-fontopt" :class="{on:!layer.style.family}" @click="setFontFamily(layer,'');open=false"><span>Default (theme)</span></div>
+                                                                <template x-for="f in filteredFontCatalog(q)" :key="f[0]">
+                                                                    <div class="fse-fontopt" :class="{on:layer.style.family===f[0]}" @click="setFontFamily(layer,f[0]);open=false">
+                                                                        <span x-text="f[0]" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+                                                                        <span class="fse-fontcat" x-text="fontCats[f[1]]"></span>
+                                                                    </div>
+                                                                </template>
+                                                                <div x-show="filteredFontCatalog(q).length===0" style="padding:12px;color:var(--mut);font-size:12px;text-align:center">No fonts match “<span x-text="q"></span>”.</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                                 <div class="fse-field" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
                                                     <div><label class="fse-lbl" x-text="device==='desktop'?'Size':'Size ('+device+')'"></label><input type="number" :value="sizeVal(layer)" @input="setFontSize(layer,$event.target.value)" class="fse-input"></div>
                                                     <div><label class="fse-lbl">Weight</label>
-                                                        <select x-model="layer.style.weight" class="fse-input">
-                                                            <option value="300">Light</option><option value="400">Regular</option><option value="500">Medium</option><option value="600">Semibold</option><option value="700">Bold</option><option value="800">Extra</option><option value="900">Black</option>
+                                                        <select x-model.number="layer.style.weight" class="fse-input">
+                                                            <template x-for="w in weightsFor(layer)" :key="w"><option :value="w" x-text="weightLabel(w)"></option></template>
                                                         </select>
                                                     </div>
                                                 </div>
@@ -771,6 +791,36 @@
                                                     @include('falcon-slider::partials.color', ['model' => 'layer.style.hoverBg', 'label' => 'Hover background'])
                                                     @include('falcon-slider::partials.color', ['model' => 'layer.style.hoverColor', 'label' => 'Hover text color'])
                                                 </div>
+                                                {{-- Text background (+ padding so the text isn't flush to the edge) --}}
+                                                <div x-show="layer.type==='text'">
+                                                    @include('falcon-slider::partials.color', ['model' => 'layer.style.bg', 'label' => 'Text background'])
+                                                    <div class="fse-field" x-show="layer.style.bg"><label class="fse-lbl">Padding (px)</label><input type="number" min="0" x-model.number="layer.style.padding" class="fse-input" placeholder="0"></div>
+                                                    {{-- Text stroke (outline). Set fill Color to transparent for outline-only text. --}}
+                                                    <div class="fse-field" style="border-top:1px solid var(--line);padding-top:10px;margin-top:8px">
+                                                        <label class="fse-lbl">Text stroke (outline)</label>
+                                                        <label class="fse-lbl" style="font-size:10px">Width (px)</label>
+                                                        <input type="number" min="0" step="0.5" x-model.number="layer.style.strokeWidth" class="fse-input" placeholder="0">
+                                                    </div>
+                                                    <div x-show="(+layer.style.strokeWidth||0)>0">
+                                                        @include('falcon-slider::partials.color', ['model' => 'layer.style.strokeColor', 'label' => 'Stroke color'])
+                                                    </div>
+                                                </div>
+                                                {{-- Border + corner radius (text & button) --}}
+                                                <div class="fse-field" style="border-top:1px solid var(--line);padding-top:10px;margin-top:8px">
+                                                    <label class="fse-lbl">Border</label>
+                                                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                                                        <div><label class="fse-lbl" style="font-size:10px">Width (px)</label><input type="number" min="0" x-model.number="layer.style.borderWidth" class="fse-input" placeholder="0"></div>
+                                                        <div><label class="fse-lbl" style="font-size:10px">Style</label>
+                                                            <select x-model="layer.style.borderStyle" class="fse-input">
+                                                                <option value="solid">Solid</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option><option value="double">Double</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div style="margin-top:6px" x-show="(+layer.style.borderWidth||0)>0">
+                                                        @include('falcon-slider::partials.color', ['model' => 'layer.style.borderColor', 'label' => 'Border color'])
+                                                    </div>
+                                                </div>
+                                                <div class="fse-field"><label class="fse-lbl">Corner radius (px)</label><input type="number" min="0" x-model.number="layer.style.radius" class="fse-input" placeholder="0"></div>
                                                 <div class="fse-field" x-show="layer.type==='text'"><label class="fse-lbl">Align</label>
                                                     <select x-model="layer.style.align" class="fse-input"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select>
                                                 </div>
@@ -1943,7 +1993,9 @@
                          '#06b6d4','#0ea5e9','#3b82f6','#6366f1','#8b5cf6','#a855f7','#d946ef','#ec4899'],
 
                 // Effective in-animation for a layer: its own, or the group's (staggered) if it has none.
-                effLayerAnim(L){ const own=this.animOf(L); if(L.groupId){ const g=this.groupOf(L.groupId), gp=g&&g.anim&&g.anim.in&&g.anim.in.preset; if(gp&&gp!=='none'&&(!own.preset||own.preset==='none')){ const mem=this.membersOf(L.groupId), idx=mem.indexOf(this.current.layers.indexOf(L)); return {preset:gp, delay:(g.anim.in.delay||0)+Math.max(0,idx)*(g.anim.stagger!=null?g.anim.stagger:120), duration:g.anim.in.duration||600, easing:g.anim.in.easing||'ease-out'}; } } return own; },
+                // Group animation is authoritative for its members (with stagger) whenever the
+                // group has one set — matches the runtime, so canvas and front-end agree.
+                effLayerAnim(L){ const own=this.animOf(L); if(L.groupId){ const g=this.groupOf(L.groupId), gp=g&&g.anim&&g.anim.in&&g.anim.in.preset; if(gp&&gp!=='none'){ const mem=this.membersOf(L.groupId), idx=mem.indexOf(this.current.layers.indexOf(L)); return {preset:gp, delay:(g.anim.in.delay||0)+Math.max(0,idx)*(g.anim.stagger!=null?g.anim.stagger:120), duration:g.anim.in.duration||600, easing:g.anim.in.easing||'ease-out'}; } } return own; },
                 previewAnims(){ if(!this.current||!this.$refs.canvas)return; const n=this.$refs.canvas.querySelectorAll('.fse-layer'); this.current.layers.forEach((L,i)=>{ const el=n[i]; if(!el)return; if(L.type==='text'&&(L.reveal||'none')!=='none'){ this.previewReveal(L); return; } const a=this.effLayerAnim(L),f=this.PRESETS[a.preset]; if(!f||a.preset==='none')return; const F=this.animFromEd(f); if(el.animate)el.animate([{opacity:F.opacity,transform:F.transform,filter:F.filter},{opacity:1,transform:'none',filter:'none'}],{delay:a.delay||0,duration:a.duration||700,easing:a.easing||'ease-out',fill:'both'}); }); },
                 // Live-preview a single layer's animation on the canvas (fires when its preset/timing changes).
                 previewLayerAnim(layer){
@@ -2153,19 +2205,24 @@
                 },
                 layerBoxStyle(l){ const d=this.posOf(l); let s=`left:${d.x}px;top:${d.y}px;width:${d.w}px;height:${d.h}px`; if(this.isHiddenDev(l)) s+=';opacity:.25'; return s; },
                 typoCss(s){ let c=''; if(s.family)c+=`font-family:'${s.family}',sans-serif;`; if(s.lineHeight)c+=`line-height:${s.lineHeight};`; if(s.letterSpacing!=null&&s.letterSpacing!=='')c+=`letter-spacing:${s.letterSpacing}px;`; if(s.transform&&s.transform!=='none')c+=`text-transform:${s.transform};`; if(s.italic)c+='font-style:italic;'; return c; },
-                textStyle(l,hov){ const s=l.style||{}; const col=(hov&&l.hover&&l.hover.color)?l.hover.color:(s.color||'#fff'); return `font-size:${this.fontSizeFor(l)||36}px;color:${col};text-align:${s.align||'left'};font-weight:${s.weight||700};line-height:${s.lineHeight||1.15};width:100%;height:100%;overflow:hidden;white-space:pre-line;pointer-events:none;${this.typoCss(s)}`; },
-                buttonStyle(l, hov){ const s=l.style||{}; const bg=(hov&&s.hoverBg)?s.hoverBg:(s.bg||'#2271b1'); const col=(hov&&s.hoverColor)?s.hoverColor:(s.color||'#fff'); return `display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:${bg};color:${col};font-size:${this.fontSizeFor(l)||16}px;border-radius:${s.radius||6}px;font-weight:${s.weight||600};${s.border?'border:'+s.border+';':''}box-sizing:border-box;pointer-events:none;transition:background .2s,color .2s;${this.typoCss(s)}`; },
+                borderCss(s){ const w=parseFloat(s.borderWidth); if(w>0) return `border:${w}px ${s.borderStyle||'solid'} ${s.borderColor||'#000'};`; if(s.border) return `border:${s.border};`; return ''; },
+                strokeCss(s){ const w=parseFloat(s.strokeWidth); return w>0?`-webkit-text-stroke:${w}px ${s.strokeColor||'#000'};`:''; },
+                textStyle(l,hov){ const s=l.style||{}; const col=(hov&&l.hover&&l.hover.color)?l.hover.color:(s.color||'#fff'); return `font-size:${this.fontSizeFor(l)||36}px;color:${col};text-align:${s.align||'left'};font-weight:${s.weight||700};line-height:${s.lineHeight||1.15};width:100%;height:100%;overflow:hidden;white-space:pre-line;pointer-events:none;box-sizing:border-box;${s.bg?'background:'+s.bg+';':''}${(+s.padding)?'padding:'+(+s.padding)+'px;':''}${this.borderCss(s)}${(+s.radius)?'border-radius:'+(+s.radius)+'px;':''}${this.strokeCss(s)}${this.typoCss(s)}`; },
+                buttonStyle(l, hov){ const s=l.style||{}; const bg=(hov&&s.hoverBg)?s.hoverBg:(s.bg||'#2271b1'); const col=(hov&&s.hoverColor)?s.hoverColor:(s.color||'#fff'); return `display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:${bg};color:${col};font-size:${this.fontSizeFor(l)||16}px;border-radius:${s.radius||6}px;font-weight:${s.weight||600};${this.borderCss(s)}box-sizing:border-box;pointer-events:none;transition:background .2s,color .2s;${this.typoCss(s)}`; },
                 // Device-aware font size + Google-fonts list/loader.
                 fontSizeFor(l){ const s=l.style||{}, dv=this.device; if(dv==='mobile') return s.sizeMobile||s.sizeTablet||s.size; if(dv==='tablet') return s.sizeTablet||s.size; return s.size; },
                 sizeVal(l){ return this.fontSizeFor(l); },
                 setFontSize(l,v){ l.style=l.style||{}; v=(v===''||isNaN(v))?'':+v; const dv=this.device; if(dv==='mobile')l.style.sizeMobile=v; else if(dv==='tablet')l.style.sizeTablet=v; else l.style.size=v; },
-                loadFont(f){ if(!f)return; const id='fsfont-'+f.replace(/[^a-z0-9]/gi,''); if(document.getElementById(id))return; const l=document.createElement('link'); l.id=id; l.rel='stylesheet'; l.href='https://fonts.googleapis.com/css2?family='+f.replace(/ /g,'+')+':ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap'; document.head.appendChild(l); },
-                fonts:{
-                    'Sans-serif':['Inter','Roboto','Open Sans','Lato','Poppins','Nunito','Montserrat','Source Sans 3','Raleway','Ubuntu','Oswald','Quicksand','PT Sans','Mukta','Work Sans','Noto Sans','Rubik','Heebo','Karla','Cabin','Libre Franklin','Barlow','DM Sans','Questrial','Cairo','Titillium Web','Hind','Josefin Sans','Public Sans','Signika','Exo 2','Maven Pro','Assistant','Oxygen','Fira Sans'],
-                    'Serif':['Playfair Display','Merriweather','Lora','PT Serif','Libre Baskerville','Crimson Text','Arvo','Bitter','EB Garamond','Noticia Text','Old Standard TT','Cardo'],
-                    'Monospace':['Fira Code','Source Code Pro','Roboto Mono','Inconsolata','Ubuntu Mono','Space Mono','VT323'],
-                    'Display':['Lobster','Pacifico','Dancing Script','Abril Fatface','Righteous','Comfortaa','Bebas Neue','Caveat','Satisfy','Patua One'],
-                },
+                loadFont(f){ if(!f)return; const id='fsfont-'+f.replace(/[^a-z0-9]/gi,''); if(document.getElementById(id))return; const l=document.createElement('link'); l.id=id; l.rel='stylesheet'; l.href='https://fonts.googleapis.com/css2?family='+f.replace(/ /g,'+')+':ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap'; document.head.appendChild(l); },
+                fontCatalog: @json($fontCatalog),
+                fontCats: @json($fontCats),
+                _fontIdx: null,
+                // Search the full Google-Fonts catalog (name match), capped for a smooth list.
+                filteredFontCatalog(q){ q=(q||'').toLowerCase().trim(); const cat=this.fontCatalog||[]; if(!q) return cat.slice(0,300); const out=[]; for(let i=0;i<cat.length && out.length<300;i++){ if(cat[i][0].toLowerCase().indexOf(q)>=0) out.push(cat[i]); } return out; },
+                setFontFamily(layer,name){ if(!layer.style)layer.style={}; layer.style.family=name; if(name){ this.loadFont(name); const ws=this.weightsFor(layer); if(ws.length && ws.indexOf(+layer.style.weight)<0){ layer.style.weight = ws.indexOf(400)>=0?400:ws[Math.floor(ws.length/2)]; } } },
+                // Available weights for the layer's font (from the catalog); a full set otherwise.
+                weightsFor(layer){ const fam=layer&&layer.style&&layer.style.family; if(fam){ if(!this._fontIdx){ this._fontIdx={}; (this.fontCatalog||[]).forEach(f=>{ this._fontIdx[f[0]]=f; }); } const e=this._fontIdx[fam]; if(e&&e[2]&&e[2].length) return e[2]; } return [300,400,500,600,700,800,900]; },
+                weightLabel(w){ return ({100:'Thin',200:'ExtraLight',300:'Light',400:'Regular',500:'Medium',600:'Semibold',700:'Bold',800:'ExtraBold',900:'Black'})[w] || (''+w); },
 
                 startDrag(e,layer,li){
                     e.preventDefault();

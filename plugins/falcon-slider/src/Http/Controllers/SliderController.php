@@ -78,6 +78,8 @@ class SliderController extends Controller
             'slider'        => $slider,
             'demos'         => \FalconSlider\Support\DemoLibrary::all(),
             'icons'         => \FalconSlider\Support\IconLibrary::names(),
+            'fontCatalog'   => \FalconSlider\Support\FontLibrary::catalog(),
+            'fontCats'      => \FalconSlider\Support\FontLibrary::categories(),
             'userTemplates' => \FalconSlider\Models\SliderTemplate::latest()->get(['id', 'name', 'category', 'settings', 'slides']),
             'isNew'         => (bool) session('sliderIsNew', false),
             // Sliders design for free; saving needs Pro. Pass the state to the editor so it

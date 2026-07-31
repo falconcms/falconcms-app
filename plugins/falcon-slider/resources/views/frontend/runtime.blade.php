@@ -100,6 +100,14 @@
         if (s.transform && s.transform !== 'none') node.style.textTransform = s.transform;
         if (s.italic) node.style.fontStyle = 'italic';
     }
+    // Composed border from structured fields (borderWidth/Style/Color), with a fallback
+    // to the legacy raw `border` string. Returns '' when there's no border.
+    function borderCss(s) {
+        var w = parseFloat(s.borderWidth);
+        if (w > 0) return w + 'px ' + (s.borderStyle || 'solid') + ' ' + (s.borderColor || '#000');
+        if (s.border) return s.border;
+        return '';
+    }
     function fontSizeFor(ly, dev) { var s = ly.style || {}; if (dev === 'mobile') return s.sizeMobile || s.sizeTablet || s.size; if (dev === 'tablet') return s.sizeTablet || s.size; return s.size; }
     function shapeClip(t) { return ({
         triangle:'polygon(50% 0,100% 100%,0 100%)', 'triangle-down':'polygon(0 0,100% 0,50% 100%)',
@@ -179,13 +187,25 @@
             el.style.lineHeight = (s.lineHeight || 1.15); el.style.overflow = 'hidden';
             el.style.whiteSpace = 'pre-line';   // honour explicit line breaks in the content
             applyTypo(el, s);
+            if (s.bg) el.style.background = s.bg;
+            if (s.padding) { el.style.padding = (parseFloat(s.padding) || 0) + 'px'; el.style.boxSizing = 'border-box'; }
+            if (parseFloat(s.strokeWidth) > 0) {
+                var _stk = parseFloat(s.strokeWidth) + 'px ' + (s.strokeColor || '#000');
+                el.style.webkitTextStroke = _stk;
+                // reveal split spans don't inherit stroke-width — apply to each.
+                el.querySelectorAll('span').forEach(function (sp) { sp.style.webkitTextStroke = _stk; });
+            }
+            var _tb = borderCss(s);
+            if (_tb) { el.style.border = _tb; el.style.boxSizing = 'border-box'; }
+            if (s.radius) el.style.borderRadius = (parseFloat(s.radius) || 0) + 'px';
         } else if (ly.type === 'button') {
             var a = document.createElement('a');
             a.href = ly.link || '#'; a.textContent = ly.content || '';
             if (ly.linkNewTab) { a.target = '_blank'; a.rel = 'noopener noreferrer'; }
             var nb = s.bg || '#2271b1', nc = s.color || '#fff';
+            var _bb = borderCss(s);
             a.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;box-sizing:border-box;text-decoration:none;font-weight:' + (s.weight || 600) + ';background:' +
-                nb + ';color:' + nc + ';font-size:' + (s.size || 16) + 'px;border-radius:' + (s.radius || 6) + 'px;' + (s.border ? 'border:' + s.border + ';' : '') + 'transition:background .2s,color .2s;';
+                nb + ';color:' + nc + ';font-size:' + (s.size || 16) + 'px;border-radius:' + (s.radius || 6) + 'px;' + (_bb ? 'border:' + _bb + ';' : '') + 'transition:background .2s,color .2s;';
             applyTypo(a, s);
             if (s.hoverBg || s.hoverColor) {
                 a.addEventListener('mouseenter', function () { if (s.hoverBg) a.style.background = s.hoverBg; if (s.hoverColor) a.style.color = s.hoverColor; });
@@ -593,10 +613,14 @@
             lyrs.forEach(function (ly) {
                 var g = ly.groupId && _gmap[ly.groupId]; if (!g) return;
                 if (g.hidden) { ly.hidden = ly.hidden || {}; ['desktop', 'tablet', 'mobile'].forEach(function (dv) { if (g.hidden[dv]) ly.hidden[dv] = true; }); }
-                var gp = g.anim && g.anim.in && g.anim.in.preset, own = ly.anim && ly.anim.in && ly.anim.in.preset;
-                if (gp && gp !== 'none' && (!own || own === 'none')) {
+                // The group animation drives every member (with a stagger) whenever the group
+                // has one set — the group is authoritative, so an editor default like 'fade'
+                // baked onto a member can't suppress it. Group preset 'none' → members keep
+                // their own animation.
+                var gp = g.anim && g.anim.in && g.anim.in.preset;
+                if (gp && gp !== 'none') {
                     var k = _gIdx[ly.groupId] || 0; _gIdx[ly.groupId] = k + 1;
-                    ly.anim = ly.anim || {};
+                    ly.anim = ly.anim || {};   // replacing .in keeps any existing .loop (idle loop)
                     ly.anim.in = { preset: gp, delay: (g.anim.in.delay || 0) + k * (g.anim.stagger != null ? g.anim.stagger : 120), duration: g.anim.in.duration || 600, easing: g.anim.in.easing || 'ease-out' };
                 }
             });
