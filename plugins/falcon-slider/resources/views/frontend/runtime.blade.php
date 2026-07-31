@@ -673,7 +673,7 @@
             if (sizing !== 'auto') applyFullBleed();               // recompute full-bleed (scrollbar-safe) after height is set
 
             var cW = wrap.clientWidth;
-            if (sizing === 'full-width')      { bgSc = cW / dw;                 laySc = Math.min(cW / dw, 1); }
+            if (sizing === 'full-width')      { bgSc = Math.max(cW/dw, cH/dh);  laySc = Math.min(cW / dw, 1); }
             else if (sizing === 'full-screen'){ bgSc = Math.max(cW/dw, cH/dh);  laySc = Math.min(cW/dw, cH/dh, 1); }
             else                              { bgSc = cW / dw; cH = dh*bgSc; wrap.style.height = cH + 'px'; laySc = bgSc; }
             var bgL=(cW-dw*bgSc)/2, bgT=(cH-dh*bgSc)/2, lL=(cW-dw*laySc)/2, lT=(cH-dh*laySc)/2;

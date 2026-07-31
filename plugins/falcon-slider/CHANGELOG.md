@@ -2,6 +2,15 @@
 
 All notable changes to the Falcon Slider plugin are documented here.
 
+## v1.1.1 — 2026-07-31
+
+### Fixed
+- **Full-width sliders no longer letterbox on mobile.** In full-width sizing the
+  background is now scaled to **cover** the fixed-height stage (like full-screen), instead
+  of being scaled to the width only — which left black bars above and below the background
+  image whenever the viewport was narrower than the design width (every phone). Layers keep
+  their width-based scale, so positions are unchanged.
+
 ## v1.1.0 — 2026-07-31
 
 ### Added
